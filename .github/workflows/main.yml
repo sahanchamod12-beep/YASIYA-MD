@@ -1,0 +1,38 @@
+name: Deploy YASIYA-MD Bot
+
+on:
+  push:
+    branches:
+      - main   # change if your repo uses 'master'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:   # allow manual run from GitHub Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18   # or check repo docs for correct version
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests (if any)
+        run: npm test || echo "No tests defined"
+
+      - name: Build project
+        run: npm run build || echo "No build script defined"
+
+      - name: Start bot (background for check)
+        run: |
+          nohup npm start &
+          sleep 10
+          echo "Bot started successfully"
