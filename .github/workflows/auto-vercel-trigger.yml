@@ -3,12 +3,12 @@ name: Auto Vercel Trigger
 on:
   schedule:
     - cron: "0 */5 * * *"  # every 5 hours
-  workflow_dispatch:       # manual run option
+  workflow_dispatch:
 
 jobs:
   vercel-trigger:
     runs-on: ubuntu-latest
-    timeout-minutes: 360   # 6 hours limit for a single job (can increase if needed)
+    timeout-minutes: 360   # allow up to 6 hours
 
     steps:
       - name: Checkout repository
@@ -22,20 +22,26 @@ jobs:
           git config --global user.email "github-actions@github.com"
 
       - name: Create trigger file
+        id: makefile
         run: |
-          echo "Triggered at $(date)" > trigger_$(date +%s).txt
-
-      - name: Commit and push trigger
-        run: |
-          git add .
+          FILENAME="trigger_$(date +%s).txt"
+          echo "Triggered at $(date)" > "$FILENAME"
+          echo "file=$FILENAME" >> $GITHUB_OUTPUT
+          git add "$FILENAME"
           git commit -m "Auto trigger at $(date)" || echo "No changes to commit"
           git push || echo "Push failed"
+          echo "✅ Created file: $FILENAME"
 
-      - name: Wait 4.8 hours (17280 seconds)
-        run: sleep 17280
-
-      - name: Delete trigger file
+      - name: Sleep 5 hours (18000 seconds)
         run: |
-          git rm trigger_*.txt || echo "No trigger file to remove"
+          echo "😴 Sleeping for 5 hours..."
+          sleep 18000
+          echo "🕒 Sleep complete."
+
+      - name: Delete same trigger file
+        run: |
+          git pull
+          git rm -f "${{ steps.makefile.outputs.file }}" || echo "No file found"
           git commit -m "Cleanup after trigger at $(date)" || echo "No cleanup commit"
           git push || echo "Push failed"
+          echo "✅ Deleted file: ${{ steps.makefile.outputs.file }}"
